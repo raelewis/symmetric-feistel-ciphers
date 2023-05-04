@@ -170,3 +170,4 @@ cython_debug/
 logs/
 texts/
 .DS_Store
+test.py

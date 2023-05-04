@@ -6,6 +6,7 @@ A simple DES implementation in Python.
 
 import argparse
 import base64
+import cProfile
 import logging
 import time
 
@@ -101,6 +102,7 @@ def key_schedule(key):
     k, pc1, pc2 = "", "", ""
     c, d, cd = [], [], []
     k = convert_to_bin(key)
+    k = k[:64]
     k = pad_binary(k, 64)
 
     for x in range(0, len(PC1), 1):
@@ -266,37 +268,16 @@ def split_data(s, key):
     else:
         text = convert_to_text(text)
             
-    # Adjust ENC / DEC flags for the second part.
-    if (args.e):
-        args.e = False
-        args.d = True
-    else:
-        args.d = False
-        args.e = True
     return text
 
 
 def encryption(plaintext, key):
     """ Return the encrypted ciphertext from the given plaintext and key. """
-    plaintext2 = ""
     logging.debug("Plaintext:   %s", plaintext)
     logging.debug("Key:         %s", key)
     ciphertext = split_data(plaintext, key)
     logging.debug("Ciphertext:  %s", ciphertext)
-    plaintext2 = split_data(ciphertext, key)
-    # A temporary solution to the padded 0s.
-    plaintext2 = plaintext2.replace("\x00", '')
-    logging.debug("Plaintext:   %s", plaintext2)
-
-    for i in range(len(plaintext2), 0, -1):
-        if plaintext2[i-1] == "\b0x00":
-            logging.warning("Null char!")
-    if (plaintext == plaintext2):
-        print("Check complete, returning ciphertext.")
-        return ciphertext
-    else:
-        logging.error("Encryption / Decryption incorrect. Exiting...")
-        return "Error"
+    return ciphertext
 
 
 def decryption(ciphertext, key):
@@ -304,17 +285,9 @@ def decryption(ciphertext, key):
     logging.debug("Ciphertext:   %s", ciphertext)
     logging.debug("Key:         %s", key)
     plaintext = split_data(ciphertext, key)
+    plaintext = plaintext.replace("\x00", '')
     logging.debug("plaintext:  %s", plaintext)
-    ciphertext2 = split_data(plaintext, key)
-    logging.debug("Ciphertext:   %s", ciphertext2)
-    if (ciphertext == ciphertext2):
-        print("Check complete, returning plaintext.")
-        plaintext = plaintext.replace("\x00", '')
-        return plaintext
-    else:
-        logging.error("Encryption / Decryption incorrect. Exiting...")
-        plaintext = plaintext.replace("\x00", '')
-        return plaintext
+    return plaintext
 
 
 def main():
@@ -354,4 +327,4 @@ def main():
     
 
 if __name__=="__main__":
-    main()
+    cProfile.run('main()')

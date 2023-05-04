@@ -8,6 +8,7 @@ import argparse
 import logging
 import time
 import base64
+import cProfile
 
 
 parser = argparse.ArgumentParser(description='Program encrypts/decrypts message using a simple feistel cipher.')
@@ -38,7 +39,6 @@ if (args.d):
 else:
     args.e = True
 
-# FIX THIS IS BAD HAHA
 KEY_SIZE = N//2     
 
 # Determines the name of the log file.
@@ -105,6 +105,7 @@ def generate_subkey(key, i):
 
 def key_schedule(key):
     bin_key = convert_to_bin(key)
+    bin_key = bin_key[:64]
     bin_key = pad_binary(bin_key, KEY_SIZE)
     return ks_shift(bin_key)
 
@@ -201,37 +202,16 @@ def split_data(s, key):
     else:
         text = convert_to_text(text)
             
-    # Adjust ENC / DEC flags for second part.
-    if (args.e):
-        args.e = False
-        args.d = True
-    else:
-        args.d = False
-        args.e = True
     return text
 
 
 def encryption(plaintext, key):
     """ Return the encrypted ciphertext from the given plaintext and key. """
-    plaintext2 = ""
     logging.debug("Plaintext:   %s", plaintext)
     logging.debug("Key:         %s", key)
     ciphertext = split_data(plaintext, key)
     logging.debug("Ciphertext:  %s", ciphertext)
-    plaintext2 = split_data(ciphertext, key)
-    # A temporary solution to the padded 0s.
-    plaintext2 = plaintext2.replace("\x00", '')
-    logging.debug("Plaintext:   %s", plaintext2)
-
-    for i in range(len(plaintext2), 0, -1):
-        if plaintext2[i-1] == "\b0x00":
-            logging.warning("Null char!")
-    if (plaintext == plaintext2):
-        logging.info("Check complete, returning ciphertext.")
-        return ciphertext
-    else:
-        logging.error("Encryption / Decryption incorrect. Exiting...")
-        return "Error"
+    return ciphertext
 
 
 def decryption(ciphertext, key):
@@ -240,16 +220,7 @@ def decryption(ciphertext, key):
     logging.debug("Key:         %s", key)
     plaintext = split_data(ciphertext, key)
     logging.debug("plaintext:  %s", plaintext)
-    ciphertext2 = split_data(plaintext, key)
-    logging.debug("Ciphertext:   %s", ciphertext2)
-    if (ciphertext == ciphertext2):
-        logging.info("Check complete, returning plaintext.")
-        plaintext = plaintext.replace("\x00", '')
-        return plaintext
-    else:
-        logging.error("Encryption / Decryption incorrect. Exiting...")
-        plaintext = plaintext.replace("\x00", '')
-        return plaintext
+    return plaintext
 
 
 def main():
@@ -291,4 +262,4 @@ def main():
     
 
 if __name__=="__main__":
-    main()
+    cProfile.run('main()')
